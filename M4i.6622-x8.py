@@ -157,13 +157,15 @@ class M4i6622:
         """
         Calculate is a function that calculates the data, stores it in the buffer and then uploads the buffer. Functions function0 to function3 are the functions 
         used in data generation, for channels 0 to 3 respectively. To use this function pass in all 4 functions (even if they are 0 functions).
+        In the future, will add the ability to pass in a list of functions corresponding to the amount of channels you want to use.
         """
         try:
+            #Calculating the amount of samples that can be added to the buffer
             qwSamplePos = 0
             self.lNumAvailSamples = (self.qwBufferSize.value // self.lSetChannels.value) // self.lBytesPerSample.value
             self.pnBuffer = cast (self.pvBuffer, ptr16)
 
-            print("inb4")
+            #Creating and populating the buffer.
             self.pnBuffer = cast  (self.pvBuffer, ptr16)
             for i in range (0, self.llMemSamples.value, 1):
                 if i%4 == 0:
@@ -176,14 +178,13 @@ class M4i6622:
                     self.pnBuffer[i] = function3(i)
 
 
-            # we define the buffer for transfer and start the DMA transfer
+            #Define the buffer for transfer and start the DMA transfer
             print("Starting the DMA transfer and waiting until data is in board memory\n")
             spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.pvBuffer, uint64 (0), self.qwBufferSize)
             spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN, self.qwBufferSize)
             spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
             print("... data has been transferred to board memory\n")
 
-            print("starting")
             
 
 
