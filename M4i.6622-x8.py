@@ -153,10 +153,12 @@ class M4i6622:
 
 
 
-    def calculate(self,function0, function1, function2, function3):
+    def calculate(self,function0, function1, function2, function3,timeout=1000):
         """
         Calculate is a function that calculates the data, stores it in the buffer and then uploads the buffer. Functions function0 to function3 are the functions 
-        used in data generation, for channels 0 to 3 respectively. To use this function pass in all 4 functions (even if they are 0 functions).
+        used in data generation, for channels 0 to 3 respectively. To use this function pass in all 4 functions (even if they are 0 functions). 
+        Timeout is the time you want for the timeout, in milliseconds.
+        
         In the future, will add the ability to pass in a list of functions corresponding to the amount of channels you want to use.
         """
         try:
@@ -189,7 +191,7 @@ class M4i6622:
 
 
             # We'll start and wait until the card has finished or until a timeout occurs
-            spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, 1000)
+            spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, timeout)
             sys.stdout.write("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
             dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
             if dwError == ERR_TIMEOUT:
@@ -198,14 +200,17 @@ class M4i6622:
             
             return 0
         except KeyboardInterrupt:
+            #it is also possible to stop the process before a timeout using a keyboard interrupt (Contrl+C in Windows)
             return -1
 
     def stop(self):
-        # send the stop command
+        """
+        Command to stop the Card. To use card again, need to reinitialize 
+        """
+        #send the stop command
         try:
             
-
-
+            
             dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
             print(dwError)
             print("Card has been Stopped")
@@ -216,10 +221,20 @@ class M4i6622:
             return -1
 
 
+
+##################################
+#                                #
+#                                #
+############ Test Code ###########
+#                                #
+#                                #
+##################################
+
+
 def f0(x):
     return x
 def f1(x):
-    return 1000000
+    return x^2
 
 def f2(x):
     return x
@@ -228,16 +243,18 @@ def f3(x):
     return x
 
 
+def main():
 
-M4i = M4i6622()
+    M4i = M4i6622()
 
-r = M4i.setSoftwareBuffer()
+    r = M4i.setSoftwareBuffer()
 
 
-r = M4i.calculate(f0,f1,f2,f3)
-time.sleep(1)
-r = M4i.calculate(f0,f1,f2,f3)
+    r = M4i.calculate(f0,f1,f2,f3)
+    time.sleep(1)
+    r = M4i.calculate(f0,f1,f2,f3)
 
-r = M4i.stop()
+    r = M4i.stop()
 
-print(r)
+    print(r)
+    return 0
