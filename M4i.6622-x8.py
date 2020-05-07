@@ -56,16 +56,31 @@ class M4i6622:
         self.qwChEnable = uint64 (1)
         self.llMemSamples = int64 (KILO_B(64))
         self.llLoops = int64 (0) # loop continuously
-        spcm_dwSetParam_i32 (self.hCard, SPC_CARDMODE,    SPC_REP_STD_CONTINUOUS)
-        spcm_dwSetParam_i64 (self.hCard, SPC_CHENABLE,    self.qwChEnable)
-        spcm_dwSetParam_i64 (self.hCard, SPC_MEMSIZE,     self.llMemSamples)
-        spcm_dwSetParam_i64 (self.hCard, SPC_LOOPS,       self.llLoops)
-        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
 
+        #putting the card in Continous mode
+        spcm_dwSetParam_i32 (self.hCard, SPC_CARDMODE,    SPC_REP_STD_CONTINUOUS)
+
+        #activating all 4 channels (changing the way the output is read)
+        spcm_dwSetParam_i64 (self.hCard, SPC_CHENABLE,    CHANNEL0 | CHANNEL1 | CHANNEL2 | CHANNEL3)
+
+        #Getting the total memory size to know how long the buffer should be
+        spcm_dwSetParam_i64 (self.hCard, SPC_MEMSIZE,     self.llMemSamples)
+
+        #Setting up the infinite loop
+        spcm_dwSetParam_i64 (self.hCard, SPC_LOOPS,       self.llLoops)
+
+        #Enable the outputs for all 4 channels
+        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
+        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT1,  1)
+        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT2,  1)
+        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT3,  1)
+
+        #Getting total number of channels recognized by the software (4 in our case) and getting the amount of bytes per sample
         self.lSetChannels = int32 (0)
         spcm_dwGetParam_i32 (self.hCard, SPC_CHCOUNT,     byref (self.lSetChannels))
         self.lBytesPerSample = int32 (0)
         spcm_dwGetParam_i32 (self.hCard, SPC_MIINST_BYTESPERSAMPLE,  byref (self.lBytesPerSample))
+
 
         # setup the trigger mode
         # (SW trigger, no output)
@@ -77,16 +92,30 @@ class M4i6622:
         spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_CH_ANDMASK1, 0)
         spcm_dwSetParam_i32 (self.hCard, SPC_TRIGGEROUT,       0)
 
-        self.lChannel = int32 (0)
-        spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + self.lChannel.value * (SPC_AMP1 - SPC_AMP0), int32 (1000))
+        lChannel0 = int32 (0)
+        lChannel1 = int32 (0)
+        lChannel2 = int32 (0)
+        lChannel3 = int32 (0)
+
+
+        #Setting up the max amplitude of each output
+        spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+        spcm_dwSetParam_i32 (self.hCard, SPC_AMP1 + lChannel1.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+        spcm_dwSetParam_i32 (self.hCard, SPC_AMP2 + lChannel2.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+        spcm_dwSetParam_i32 (self.hCard, SPC_AMP3 + lChannel3.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+
 
     def checkCard(self):
+        """
+        Function that checks if the card used is indeed an M4i.6622-x8 or is compatible with AO.
+        """
 
         #Check if Card is connected
         if self.hCard == None:
             print("no card found...\n")
             return False
 
+        #Getting the card Name to check if it's supported.
         sCardName = szTypeToName (self.lCardType.value)
         if self.lFncType.value == SPCM_TYPE_AO:
             print("Found: {0} sn {1:05d}\n".format(sCardName,self.lSerialNumber.value))
@@ -96,8 +125,10 @@ class M4i6622:
             return False
 
 
-    def setSoftwareBuffer(self,NotifySize=128*1024,BufferSize=32*1024*1024):
-
+    def setSoftwareBuffer(self):
+        """
+        Function to set up the SoftwareBuffer, no arguments required.
+        """
         # setup software buffer
         self.qwBufferSize = uint64 (self.llMemSamples.value * self.lBytesPerSample.value * self.lSetChannels.value) # total size of the buffer
 
@@ -132,7 +163,14 @@ class M4i6622:
             print("inb4")
             self.pnBuffer = cast  (self.pvBuffer, ptr16)
             for i in range (0, self.llMemSamples.value, 1):
-                self.pnBuffer[i] = 1000000
+                if i%4 == 0:
+                    self.pnBuffer[i] = 1000000
+                elif i%4 == 1:
+                    self.pnBuffer[i] = -i
+                elif i%4 == 2:
+                    self.pnBuffer[i] = -5600000 
+                else:
+                    self.pnBuffer[i] = -250000
 
 
             # we define the buffer for transfer and start the DMA transfer
