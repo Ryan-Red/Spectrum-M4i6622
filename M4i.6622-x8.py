@@ -153,8 +153,11 @@ class M4i6622:
 
 
 
-    def calculate(self, channel=0):
-
+    def calculate(self,function0, function1, function2, function3):
+        """
+        Calculate is a function that calculates the data, stores it in the buffer and then uploads the buffer. Functions function0 to function3 are the functions 
+        used in data generation, for channels 0 to 3 respectively. To use this function pass in all 4 functions (even if they are 0 functions).
+        """
         try:
             qwSamplePos = 0
             self.lNumAvailSamples = (self.qwBufferSize.value // self.lSetChannels.value) // self.lBytesPerSample.value
@@ -164,13 +167,13 @@ class M4i6622:
             self.pnBuffer = cast  (self.pvBuffer, ptr16)
             for i in range (0, self.llMemSamples.value, 1):
                 if i%4 == 0:
-                    self.pnBuffer[i] = 1000000
+                    self.pnBuffer[i] = function0(i)
                 elif i%4 == 1:
-                    self.pnBuffer[i] = -i
+                    self.pnBuffer[i] = function1(i)
                 elif i%4 == 2:
-                    self.pnBuffer[i] = -5600000 
+                    self.pnBuffer[i] = function2(i)
                 else:
-                    self.pnBuffer[i] = -250000
+                    self.pnBuffer[i] = function3(i)
 
 
             # we define the buffer for transfer and start the DMA transfer
@@ -212,15 +215,27 @@ class M4i6622:
             return -1
 
 
+def f0(x):
+    return x
+def f1(x):
+    return 1000000
+
+def f2(x):
+    return x
+
+def f3(x):
+    return x
+
+
 
 M4i = M4i6622()
 
 r = M4i.setSoftwareBuffer()
 
 
-r = M4i.calculate(channel = 0)
+r = M4i.calculate(f0,f1,f2,f3)
 time.sleep(1)
-r = M4i.calculate(channel = 0)
+r = M4i.calculate(f0,f1,f2,f3)
 
 r = M4i.stop()
 
