@@ -18,7 +18,7 @@ import time
 
 
 class M4i6622:
-    def __init__(self, address=b'/dev/spcm0'):
+    def __init__(self, address=b'/dev/spcm0',channelNum = 4):
         
         #Connect the Card
         self.hCard = spcm_hOpen (create_string_buffer (address))
@@ -47,14 +47,14 @@ class M4i6622:
 
         # set samplerate to 1 MHz (M2i) or 50 MHz, no clock output
         if ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4IEXPSERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4XEXPSERIES):
-            spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(50))
+            spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(200))
         else:
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(1))
         spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   0)
 
         # setup the mode
         self.qwChEnable = uint64 (1)
-        self.llMemSamples = int64 (KILO_B(64))
+        self.llMemSamples = int64 (KILO_B(1024))
         self.llLoops = int64 (0) # loop continuously
 
         #putting the card in Continous mode
@@ -69,11 +69,18 @@ class M4i6622:
         #Setting up the infinite loop
         spcm_dwSetParam_i64 (self.hCard, SPC_LOOPS,       self.llLoops)
 
-        #Enable the outputs for all 4 channels
-        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
-        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT1,  1)
-        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT2,  1)
-        spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT3,  1)
+        self.channelNum = channelNum
+
+        if self.channelNum == 1:
+            #Enable the outputs for all 4 channels
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
+
+        if self.channelNum == 4:
+            #Enable the outputs for all 4 channels
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT1,  1)
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT2,  1)
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT3,  1)
 
         #Getting total number of channels recognized by the software (4 in our case) and getting the amount of bytes per sample
         self.lSetChannels = int32 (0)
@@ -99,10 +106,18 @@ class M4i6622:
 
 
         #Setting up the max amplitude of each output
-        spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-        spcm_dwSetParam_i32 (self.hCard, SPC_AMP1 + lChannel1.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-        spcm_dwSetParam_i32 (self.hCard, SPC_AMP2 + lChannel2.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-        spcm_dwSetParam_i32 (self.hCard, SPC_AMP3 + lChannel3.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+        if self.channelNum == 1:
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
+
+        else:
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP1 + lChannel1.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP2 + lChannel2.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP3 + lChannel3.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+
+            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
+            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER1, int32(1) )
+
 
 
     def checkCard(self):
@@ -172,11 +187,11 @@ class M4i6622:
             for i in range (0, self.llMemSamples.value, 1):
                 if i%4 == 0:
                     self.pnBuffer[i] = function0(i)
-                elif i%4 == 1:
+                elif i%4 == 1 and self.channelNum == 4:
                     self.pnBuffer[i] = function1(i)
-                elif i%4 == 2:
+                elif i%4 == 2 and self.channelNum == 4:
                     self.pnBuffer[i] = function2(i)
-                else:
+                elif i%4 == 3 and self.channelNum == 4:
                     self.pnBuffer[i] = function3(i)
 
 
@@ -232,9 +247,9 @@ class M4i6622:
 
 
 def f0(x):
-    return x
+    return math.floor(100*math.exp(-(x-2000)**2/10000))
 def f1(x):
-    return x^2
+    return math.floor(1000*(np.sin(x/10)))
 
 def f2(x):
     return x
@@ -245,16 +260,19 @@ def f3(x):
 
 def main():
 
-    M4i = M4i6622()
+
+    M4i = M4i6622(channelNum=1)
 
     r = M4i.setSoftwareBuffer()
 
 
-    r = M4i.calculate(f0,f1,f2,f3)
-    time.sleep(1)
-    r = M4i.calculate(f0,f1,f2,f3)
+    r = M4i.calculate(f0,f1,f2,f3,timeout=100000)
+    time.sleep(5)
+    print("continue")
+    r = M4i.calculate(f0,f1,f2,f3,timeout=5000)
 
     r = M4i.stop()
 
     print(r)
     return 0
+main()
