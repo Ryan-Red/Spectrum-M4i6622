@@ -14,6 +14,7 @@ import math
 import sys
 import numpy as np
 import time
+import mpmath
 
 
 
@@ -45,6 +46,7 @@ class M4i6622:
         if Valid == False:
             exit()
 
+        self.SampleRate = MEGA(200)
         # set samplerate to 1 MHz (M2i) or 50 MHz, no clock output
         if ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4IEXPSERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4XEXPSERIES):
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(200))
@@ -206,11 +208,11 @@ class M4i6622:
 
 
             # We'll start and wait until the card has finished or until a timeout occurs
-            spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, timeout)
+            spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, 0)
             sys.stdout.write("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
             dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
             if dwError == ERR_TIMEOUT:
-                spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_STOP)
+                print("timeout has elapsed")
 
             
             return 0
@@ -247,7 +249,12 @@ class M4i6622:
 
 
 def f0(x):
-    return math.floor(100*math.exp(-(x-2000)**2/10000))
+    T= 1000
+    f = 2000000
+    x0 = 100000
+    return math.floor(1000*(1/np.cosh((x-x0)/T)**2) * np.sin(x*2*math.pi*f/MEGA(200))) #math.floor( 1000*(mpmath.sech((x-x0)/T))) #* math.sin(2*math.pi*f*x))
+
+
 def f1(x):
     return math.floor(1000*(np.sin(x/10)))
 
@@ -258,6 +265,8 @@ def f3(x):
     return x
 
 
+
+
 def main():
 
 
@@ -266,10 +275,10 @@ def main():
     r = M4i.setSoftwareBuffer()
 
 
-    r = M4i.calculate(f0,f1,f2,f3,timeout=100000)
-    time.sleep(5)
+    r = M4i.calculate(f0,f1,f2,f3,timeout=500000)
+    time.sleep(30)
     print("continue")
-    r = M4i.calculate(f0,f1,f2,f3,timeout=5000)
+    #r = M4i.calculate(f0,f1,f2,f3,timeout=500000)
 
     r = M4i.stop()
 
