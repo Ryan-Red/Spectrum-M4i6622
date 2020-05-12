@@ -170,7 +170,7 @@ class M4i6622:
 
 
 
-    def calculate(self,function0, function1, function2, function3,timeout=1000):
+    def calculate(self,function0, function1, function2, function3):
         """
         Calculate is a function that calculates the data, stores it in the buffer and then uploads the buffer. Functions function0 to function3 are the functions 
         used in data generation, for channels 0 to 3 respectively. To use this function pass in all 4 functions (even if they are 0 functions). 
