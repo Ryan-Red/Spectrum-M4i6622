@@ -56,7 +56,7 @@ class M4i6622:
 
         # setup the mode
         self.qwChEnable = uint64 (1)
-        self.llMemSamples = int64 (KILO_B(1024))
+        self.llMemSamples = int64 (KILO_B(4*1024))
         self.llLoops = int64 (0) # loop continuously
 
         #putting the card in Continous mode
@@ -249,10 +249,8 @@ class M4i6622:
 
 
 def f0(x):
-    T= 1000
-    f = 2000000
-    x0 = 100000
-    return math.floor(1000*(1/np.cosh((x-x0)/T)**2) * np.sin(x*2*math.pi*f/MEGA(200))) #math.floor( 1000*(mpmath.sech((x-x0)/T))) #* math.sin(2*math.pi*f*x))
+
+    return sin_of_ln(x)
 
 
 def f1(x):
@@ -264,6 +262,77 @@ def f2(x):
 def f3(x):
     return x
 
+
+def Batman(x):
+    x = (x- 100000)/1000
+    if abs(x) < 0.5:
+        return math.floor(2.25*400*np.sin(x*300))
+    elif abs(x) < 0.75:
+        return math.floor(400*(3 * abs(x) + 0.75)*np.sin(x*300))
+    elif abs(x) < 1:
+        return math.floor(400*(9-8*abs(x))*math.sin(x*300))
+    #elif abs(x) > 4 and abs(x) < 7:
+    #    return math.floor(1000*(-3*math.sqrt(-(x/7)**2 + 1))*math.sin(x/10))
+    elif abs(x) > 3 and abs(x) < 7:
+        return math.floor(400*(3*math.pow(-(x/7)**2 + 1,0.5))*math.sin(x*300))
+    elif abs(x) > 1 and abs(x) < 3:
+        return math.floor(400* (1.5 - 0.5*abs(x) - 6 * math.sqrt(10)/14 *(math.sqrt(3-x**2 + 2 * abs(x)) -2))*math.sin(x*300))
+
+    else:
+        return 0
+    
+def sin_of_exp(x):
+    x = 10*x
+    return math.floor(1000 * math.sin(math.exp(x)))
+
+def sin_of_ln(x):
+    x = 10*x
+    if x != 0:
+        return math.floor(1000 * math.sin(math.log(x**2)))
+    else:
+        return 0
+
+def weird_sin(x):
+    a = 1000
+
+    if x != a:
+        return math.floor((x-a)*math.sin(1/(x-a)))
+    else: 
+        return 0
+
+def gaussianEnvelope(x):
+    x = x
+    x0 = 1000
+    sigma = 1000
+    f = 200000 
+    return math.floor(1000*math.exp(-(x-x0)**2 / sigma)*np.sin(x*2*math.pi*f/MEGA(200)))
+
+
+def gaussianDist(x):
+    x = x
+    x0 = 1000
+    sigma = 1000
+    return math.floor(1000*math.exp(-(x-x0)**2 / sigma))
+
+def firstOrderPolynomial(x):
+    x = (x-1000)/10000
+    return math.floor(x)
+
+
+def sechEnvelope(x):
+    T= 1000
+    f = 2000000
+    x0 = 100000
+
+    return math.floor(1000*(1/np.cosh((x-x0)/T)**2) * np.sin(x*2*math.pi*f/MEGA(200))) 
+
+def circle(x):
+    x = x- 10000
+
+    if abs(x) < 10000:
+        return math.floor(1/10 *math.sqrt(10000**2 - x**2)*math.sin(x/3))
+    else:
+        return 0
 
 
 
