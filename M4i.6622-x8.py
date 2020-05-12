@@ -187,7 +187,7 @@ class M4i6622:
             #Creating and populating the buffer.
             self.pnBuffer = cast  (self.pvBuffer, ptr16)
             for i in range (0, self.llMemSamples.value, 1):
-                if i%4 == 0:
+                if i%4 == 0 or self.channelNum== 1:
                     self.pnBuffer[i] = function0(i)
                 elif i%4 == 1 and self.channelNum == 4:
                     self.pnBuffer[i] = function1(i)
@@ -250,7 +250,7 @@ class M4i6622:
 
 def f0(x):
 
-    return sin_of_ln(x)
+    return Batman(x)
 
 
 def f1(x):
