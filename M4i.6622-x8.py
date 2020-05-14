@@ -46,17 +46,17 @@ class M4i6622:
         if Valid == False:
             exit()
 
-        self.SampleRate = MEGA(200)
-        # set samplerate to 1 MHz (M2i) or 50 MHz, no clock output
+        self.SampleRate = MEGA(600)
+
         if ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4IEXPSERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4XEXPSERIES):
-            spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(200))
+            spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, self.SampleRate)
         else:
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(1))
         spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   0)
 
         # setup the mode
         self.qwChEnable = uint64 (1)
-        self.llMemSamples = int64 (KILO_B(4*1024))
+        self.llMemSamples = int64 (KILO_B(1024*2))
         self.llLoops = int64 (0) # loop continuously
 
         #putting the card in Continous mode
@@ -147,6 +147,7 @@ class M4i6622:
         Function to set up the SoftwareBuffer, no arguments required.
         """
         # setup software buffer
+        print(self.llMemSamples.value, self.lBytesPerSample.value, self.lSetChannels.value)
         self.qwBufferSize = uint64 (self.llMemSamples.value * self.lBytesPerSample.value * self.lSetChannels.value) # total size of the buffer
 
         # we try to use continuous memory if available and big enough
@@ -181,6 +182,7 @@ class M4i6622:
         try:
             #Calculating the amount of samples that can be added to the buffer
             qwSamplePos = 0
+            print(self.qwBufferSize.value , self.lSetChannels.value, self.lBytesPerSample.value)
             self.lNumAvailSamples = (self.qwBufferSize.value // self.lSetChannels.value) // self.lBytesPerSample.value
             self.pnBuffer = cast (self.pvBuffer, ptr16)
 
@@ -250,7 +252,8 @@ class M4i6622:
 
 def f0(x):
 
-    return Batman(x)
+    return sin(x)
+
 
 
 def f1(x):
@@ -281,6 +284,11 @@ def Batman(x):
     else:
         return 0
     
+def sin(x):
+    f = 177000000
+    Samples = 2400000000
+    return math.floor(6000*math.sin(2*math.pi*x*f/Samples))
+
 def sin_of_exp(x):
     x = 10*x
     return math.floor(1000 * math.sin(math.exp(x)))
@@ -302,10 +310,10 @@ def weird_sin(x):
 
 def gaussianEnvelope(x):
     x = x
-    x0 = 1000
-    sigma = 1000
-    f = 200000 
-    return math.floor(1000*math.exp(-(x-x0)**2 / sigma)*np.sin(x*2*math.pi*f/MEGA(200)))
+    x0 = 10000
+    sigma = 100000
+    f = 2000000 
+    return math.floor(1000*math.exp(-(x-x0)**2 / sigma)*  np.sin(x*2*math.pi*f/MEGA(200)))
 
 
 def gaussianDist(x):
@@ -344,11 +352,9 @@ def main():
     r = M4i.setSoftwareBuffer()
 
 
-    r = M4i.calculate(f0,f1,f2,f3,timeout=500000)
+    r = M4i.calculate(f0,f1,f2,f3)
     time.sleep(30)
     print("continue")
-    #r = M4i.calculate(f0,f1,f2,f3,timeout=500000)
-
     r = M4i.stop()
 
     print(r)
