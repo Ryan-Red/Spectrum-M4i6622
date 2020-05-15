@@ -252,7 +252,7 @@ class M4i6622:
 
 def f0(x):
 
-    return sin(x)
+    return circle(x)
 
 
 
@@ -287,7 +287,7 @@ def Batman(x):
 def sin(x):
     f = 177000000
     Samples = 2400000000
-    return math.floor(6000*math.sin(2*math.pi*x*f/Samples))
+    return math.floor(8000*math.sin(2*math.pi*x*f/Samples))
 
 def sin_of_exp(x):
     x = 10*x
