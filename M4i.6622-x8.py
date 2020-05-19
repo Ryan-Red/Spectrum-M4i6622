@@ -18,6 +18,7 @@ import mpmath
 
 
 
+
 class M4i6622:
     def __init__(self, address=b'/dev/spcm0',channelNum = 4):
         
@@ -56,7 +57,7 @@ class M4i6622:
 
         # setup the mode
         self.qwChEnable = uint64 (1)
-        self.llMemSamples = int64 (KILO_B(1024*2))
+        self.llMemSamples = int64 (KILO_B(1024*16))
         self.llLoops = int64 (0) # loop continuously
 
         #putting the card in Continous mode
@@ -100,6 +101,8 @@ class M4i6622:
         spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_CH_ANDMASK0, 0)
         spcm_dwSetParam_i32 (self.hCard, SPC_TRIG_CH_ANDMASK1, 0)
         spcm_dwSetParam_i32 (self.hCard, SPC_TRIGGEROUT,       0)
+
+        spcm_dwSetParam_i64 (self.hCard, SPC_TRIG_DELAY,       0)
 
         lChannel0 = int32 (0)
         lChannel1 = int32 (0)
@@ -252,18 +255,34 @@ class M4i6622:
 
 def f0(x):
 
-    return circle(x)
+    return sin_for_time(60000000, 40000000, 10000,10000, x)
 
 
 
 def f1(x):
-    return math.floor(1000*(np.sin(x/10)))
+    return sin(x)
 
 def f2(x):
     return x
 
 def f3(x):
     return x
+
+
+def sin_for_time(freq1, freq2, time1,time2,x):
+    #Time in nanoseconds
+    x = x %((time1 + time2)*2.4)
+    Samples = 2400000000
+
+    # 1 sec = 2 400 000 000 
+    # 1 nanosecond  = 2.4
+    if (x <= time1*2.4):
+        return math.floor(1000*math.sin(2*math.pi*x*freq1/Samples))
+    else:
+        return math.floor(1000*math.sin(2*math.pi*x*freq2/Samples))
+
+    
+
 
 
 def Batman(x):
@@ -287,7 +306,7 @@ def Batman(x):
 def sin(x):
     f = 177000000
     Samples = 2400000000
-    return math.floor(8000*math.sin(2*math.pi*x*f/Samples))
+    return math.floor(3000*math.sin(2*math.pi*x*f/Samples))
 
 def sin_of_exp(x):
     x = 10*x
@@ -347,7 +366,7 @@ def circle(x):
 def main():
 
 
-    M4i = M4i6622(channelNum=1)
+    M4i = M4i6622(channelNum=4)
 
     r = M4i.setSoftwareBuffer()
 
