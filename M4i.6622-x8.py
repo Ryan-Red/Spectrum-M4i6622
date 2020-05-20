@@ -187,19 +187,32 @@ class M4i6622:
             qwSamplePos = 0
             print(self.qwBufferSize.value , self.lSetChannels.value, self.lBytesPerSample.value)
             self.lNumAvailSamples = (self.qwBufferSize.value // self.lSetChannels.value) // self.lBytesPerSample.value
-            self.pnBuffer = cast (self.pvBuffer, ptr16)
 
             #Creating and populating the buffer.
             self.pnBuffer = cast  (self.pvBuffer, ptr16)
-            for i in range (0, self.llMemSamples.value, 1):
-                if i%4 == 0 or self.channelNum== 1:
-                    self.pnBuffer[i] = function0(i)
-                elif i%4 == 1 and self.channelNum == 4:
-                    self.pnBuffer[i] = function1(i)
-                elif i%4 == 2 and self.channelNum == 4:
-                    self.pnBuffer[i] = function2(i)
-                elif i%4 == 3 and self.channelNum == 4:
-                    self.pnBuffer[i] = function3(i)
+
+
+            rangeA = np.arange(0,(int)(self.llMemSamples.value/4),1)
+            print("Ok")
+            
+            f0Val = function0(rangeA)
+            f1Val = function1(rangeA)
+            f2Val = function2(rangeA)
+            f3Val = function3(rangeA)
+
+            for i in range(0,self.llMemSamples.value):
+                if i%4 == 0 :
+                    self.pnBuffer[i] = (int)(f0Val[(int)(i/4)])
+                elif i%4 == 1 :
+                    self.pnBuffer[i] = (int)(f1Val[(int)((i-1)/4)])
+                elif i%4 == 2 :
+                    self.pnBuffer[i] = (int)(f2Val[(int)((i-2)/4)])
+                elif i%4 == 3 :
+                    self.pnBuffer[i] = (int)(f3Val[(int)((i-3)/4)])
+
+        
+
+
 
 
             #Define the buffer for transfer and start the DMA transfer
@@ -276,10 +289,21 @@ def sin_for_time(freq1, freq2, time1,time2,x):
 
     # 1 sec = 2 400 000 000 
     # 1 nanosecond  = 2.4
-    if (x <= time1*2.4):
-        return math.floor(1000*math.sin(2*math.pi*x*freq1/Samples))
-    else:
-        return math.floor(1000*math.sin(2*math.pi*x*freq2/Samples))
+    index0 = 0
+    for i in range(0,len(x)):
+        if x[i] > time1*2.4:
+            index0 = i
+            break
+    ret = np.zeros(x.size)
+
+
+    ret[0:index0] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq1/Samples,x[0:index0])))
+    ret[index0:] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/Samples,x[index0:])))
+    return ret
+    #if (x <= time1*2.4):
+    #    return np.floor(1000*np.sin(np.multiply(2*math.pi*freq1/Samples,x)))
+    #else:
+    #    return np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/Samples,x)))
 
     
 
@@ -306,7 +330,7 @@ def Batman(x):
 def sin(x):
     f = 177000000
     Samples = 2400000000
-    return math.floor(3000*math.sin(2*math.pi*x*f/Samples))
+    return np.floor(1000*np.sin(np.multiply(2*math.pi*f/Samples,x)))
 
 def sin_of_exp(x):
     x = 10*x
