@@ -192,23 +192,59 @@ class M4i6622:
             self.pnBuffer = cast  (self.pvBuffer, ptr16)
 
 
-            rangeA = np.arange(0,(int)(self.llMemSamples.value/4),1)
+            x = np.arange(0,(int)(self.llMemSamples.value/4),1)
             print("Ok")
-            
-            f0Val = function0(rangeA)
-            f1Val = function1(rangeA)
-            f2Val = function2(rangeA)
-            f3Val = function3(rangeA)
 
-            for i in range(0,self.llMemSamples.value):
-                if i%4 == 0 :
-                    self.pnBuffer[i] = (int)(f0Val[(int)(i/4)])
-                elif i%4 == 1 :
-                    self.pnBuffer[i] = (int)(f1Val[(int)((i-1)/4)])
-                elif i%4 == 2 :
-                    self.pnBuffer[i] = (int)(f2Val[(int)((i-2)/4)])
-                elif i%4 == 3 :
-                    self.pnBuffer[i] = (int)(f3Val[(int)((i-3)/4)])
+
+            t0 = time.perf_counter()
+
+            #Generate the vectors:
+            vect0 = function0(x)
+            vect1 = function1(x)
+            vect2 = function2(x)
+            vect3 = function3(x)
+
+            oneList = np.ones((int)(self.llMemSamples.value/4),dtype=int)
+            indices = list(range(0,(int)(self.llMemSamples.value),4))
+
+            buffer = np.zeros((int)(self.llMemSamples.value))
+
+            buffer[indices] = vect0
+            indices = np.add(indices, oneList)
+
+            buffer[indices] = vect1
+            indices = np.add(indices, oneList)
+
+            buffer[indices] = vect2
+            indices = np.add(indices, oneList)
+
+            buffer[indices] = vect3
+            indices = np.add(indices, oneList)
+
+
+            self.pnBuffer = buffer
+
+            tf = time.perf_counter() - t0
+
+            print("Done")
+            print("Time elapsed: {0: 10f} s".format(tf))
+
+            
+            
+            # f0Val = function0(rangeA)
+            # f1Val = function1(rangeA)
+            # f2Val = function2(rangeA)
+            # f3Val = function3(rangeA)
+
+            # for i in range(0,self.llMemSamples.value):
+            #     if i%4 == 0 :
+            #         self.pnBuffer[i] = (int)(f0Val[(int)(i/4)])
+            #     elif i%4 == 1 :
+            #         self.pnBuffer[i] = (int)(f1Val[(int)((i-1)/4)])
+            #     elif i%4 == 2 :
+            #         self.pnBuffer[i] = (int)(f2Val[(int)((i-2)/4)])
+            #     elif i%4 == 3 :
+            #         self.pnBuffer[i] = (int)(f3Val[(int)((i-3)/4)])
 
         
 
