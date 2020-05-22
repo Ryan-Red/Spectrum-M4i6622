@@ -15,6 +15,7 @@ import sys
 import numpy as np
 import time
 import mpmath
+import multiprocessing
 
 
 
@@ -156,25 +157,26 @@ class M4i6622:
         # we try to use continuous memory if available and big enough
         self.pvBuffer = c_void_p ()
         self.qwContBufLen = uint64 (0)
-        try:
-            spcm_dwGetContBuf_i64 (self.hCard, SPCM_BUF_DATA, byref(self.pvBuffer), byref(self.qwContBufLen))
-            print("ContBuf length: {0:d}\n".format(self.qwContBufLen.value))
-            if self.qwContBufLen.value >= self.qwBufferSize.value:
-                print("Using continuous buffer\n")
-            else:
-                self.pvBuffer = pvAllocMemPageAligned (self.qwBufferSize.value)
-                print("Using buffer allocated by user program\n")
-
-            return 0
-        except Exception as e:
-            print("Exception",str(e), " occured")
-            return -1
-
-
+        #try:
+        #    spcm_dwGetContBuf_i64 (self.hCard, SPCM_BUF_DATA, byref(self.pvBuffer), byref(self.qwContBufLen))
+        #    print("ContBuf length: {0:d}\n".format(self.qwContBufLen.value))
+        #    if self.qwContBufLen.value >= self.qwBufferSize.value:
+        #        print("Using continuous buffer\n")
+        #    else:
+        #        self.pvBuffer = pvAllocMemPageAligned (self.qwBufferSize.value)
+        #        print("Using buffer allocated by user program\n")
+        #
+        #    return 0
+        #except Exception as e:
+        #    print("Exception",str(e), " occured")
+        #    return -1
 
 
 
-    def calculate(self,function0, function1, function2, function3):
+  
+
+
+    def calculate(self):
         """
         Calculate is a function that calculates the data, stores it in the buffer and then uploads the buffer. Functions function0 to function3 are the functions 
         used in data generation, for channels 0 to 3 respectively. To use this function pass in all 4 functions (even if they are 0 functions). 
@@ -185,70 +187,10 @@ class M4i6622:
         try:
             #Calculating the amount of samples that can be added to the buffer
             qwSamplePos = 0
-            print(self.qwBufferSize.value , self.lSetChannels.value, self.lBytesPerSample.value)
-            self.lNumAvailSamples = (self.qwBufferSize.value // self.lSetChannels.value) // self.lBytesPerSample.value
-
-            #Creating and populating the buffer.
-            self.pnBuffer = cast  (self.pvBuffer, ptr16)
-
-
-            x = np.arange(0,(int)(self.llMemSamples.value/4),1)
-            print("Ok")
-
-
-            t0 = time.perf_counter()
-
-            #Generate the vectors:
-            vect0 = function0(x)
-            vect1 = function1(x)
-            vect2 = function2(x)
-            vect3 = function3(x)
-
-            oneList = np.ones((int)(self.llMemSamples.value/4),dtype=int)
-            indices = list(range(0,(int)(self.llMemSamples.value),4))
-
-            buffer = np.zeros((int)(self.llMemSamples.value))
-
-            buffer[indices] = vect0
-            indices = np.add(indices, oneList)
-
-            buffer[indices] = vect1
-            indices = np.add(indices, oneList)
-
-            buffer[indices] = vect2
-            indices = np.add(indices, oneList)
-
-            buffer[indices] = vect3
-            indices = np.add(indices, oneList)
-
-
-            self.pnBuffer = buffer
-
-            tf = time.perf_counter() - t0
-
-            print("Done")
-            print("Time elapsed: {0: 10f} s".format(tf))
-
-            
-            
-            # f0Val = function0(rangeA)
-            # f1Val = function1(rangeA)
-            # f2Val = function2(rangeA)
-            # f3Val = function3(rangeA)
-
-            # for i in range(0,self.llMemSamples.value):
-            #     if i%4 == 0 :
-            #         self.pnBuffer[i] = (int)(f0Val[(int)(i/4)])
-            #     elif i%4 == 1 :
-            #         self.pnBuffer[i] = (int)(f1Val[(int)((i-1)/4)])
-            #     elif i%4 == 2 :
-            #         self.pnBuffer[i] = (int)(f2Val[(int)((i-2)/4)])
-            #     elif i%4 == 3 :
-            #         self.pnBuffer[i] = (int)(f3Val[(int)((i-3)/4)])
-
         
 
-
+            self.pvBuffer = (c_int16 * self.qwBufferSize.value)(*self.buffer)
+            self.pnBuffer = cast  (self.pvBuffer, ptr16)
 
 
             #Define the buffer for transfer and start the DMA transfer
@@ -260,19 +202,51 @@ class M4i6622:
 
             
 
+            
+            return 0
+        except KeyboardInterrupt:
+            #it is also possible to stop the process before a timeout using a keyboard interrupt (Contrl+C in Windows)
+            return -1
 
-            # We'll start and wait until the card has finished or until a timeout occurs
+    def startCard(self):
+
+        # We'll start and wait until the card has finished or until a timeout occurs
+        try:
+ 
+
+
             spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, 0)
             sys.stdout.write("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
             dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
             if dwError == ERR_TIMEOUT:
                 print("timeout has elapsed")
 
-            
-            return 0
         except KeyboardInterrupt:
             #it is also possible to stop the process before a timeout using a keyboard interrupt (Contrl+C in Windows)
             return -1
+
+    def setupCard(self,function0, function1, function2, function3):
+        self.genBuffer(function0, function1, function2, function3)
+        self.calculate()
+        return 0
+
+    def getVal(self):
+
+        return self.llMemSamples.value
+    
+    def genBuffer(self,function0, function1, function2, function3):
+        val = self.getVal()
+
+        #Creating and populating the buffer.
+        rangeA = np.arange(0,(int)(val/4),1)
+        vect0 = function0(rangeA).astype(int)     
+        vect1 = function1(rangeA).astype(int)
+        vect2 = function2(rangeA).astype(int)            
+        vect3 = function3(rangeA).astype(int)
+        self.buffer = np.column_stack((vect0, vect1, vect2, vect3)).flatten()
+        return 0
+
+
 
     def stop(self):
         """
@@ -304,7 +278,7 @@ class M4i6622:
 
 def f0(x):
 
-    return sin_for_time(60000000, 40000000, 10000,10000, x)
+    return sin(x)#sin_for_time(60000000, 40000000, 10000,10000, x)
 
 
 
@@ -330,16 +304,13 @@ def sin_for_time(freq1, freq2, time1,time2,x):
         if x[i] > time1*2.4:
             index0 = i
             break
-    ret = np.zeros(x.size)
+    ret = np.zeros(x.size,dtype=int)
 
 
-    ret[0:index0] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq1/Samples,x[0:index0])))
-    ret[index0:] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/Samples,x[index0:])))
+    ret[0:index0] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq1/Samples,x[0:index0])),dtype=int)
+    ret[index0:] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/Samples,x[index0:])),dtype=int)
     return ret
-    #if (x <= time1*2.4):
-    #    return np.floor(1000*np.sin(np.multiply(2*math.pi*freq1/Samples,x)))
-    #else:
-    #    return np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/Samples,x)))
+
 
     
 
@@ -423,19 +394,34 @@ def circle(x):
 
 
 
-def main():
 
 
-    M4i = M4i6622(channelNum=4)
-
-    r = M4i.setSoftwareBuffer()
 
 
-    r = M4i.calculate(f0,f1,f2,f3)
-    time.sleep(30)
-    print("continue")
-    r = M4i.stop()
 
-    print(r)
-    return 0
-main()
+M4i = M4i6622(channelNum=4)
+r = M4i.setSoftwareBuffer()
+
+
+t0 = time.perf_counter()
+
+M4i.setupCard(f0,f1,f2,f3)
+
+tf = time.perf_counter() - t0
+
+print("Done")
+print("Time elapsed: {0: 10f} s".format(tf))
+
+M4i.startCard()
+
+
+time.sleep(30)
+print("continue")
+r = M4i.stop()
+
+print(r)
+
+
+
+
+
