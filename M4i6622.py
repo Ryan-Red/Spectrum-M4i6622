@@ -14,8 +14,8 @@ import math
 import sys
 import numpy as np
 import time
-import mpmath
 import multiprocessing
+from Functions.functions import *
 
 
 
@@ -157,23 +157,8 @@ class M4i6622:
         # we try to use continuous memory if available and big enough
         self.pvBuffer = c_void_p ()
         self.qwContBufLen = uint64 (0)
-        #try:
-        #    spcm_dwGetContBuf_i64 (self.hCard, SPCM_BUF_DATA, byref(self.pvBuffer), byref(self.qwContBufLen))
-        #    print("ContBuf length: {0:d}\n".format(self.qwContBufLen.value))
-        #    if self.qwContBufLen.value >= self.qwBufferSize.value:
-        #        print("Using continuous buffer\n")
-        #    else:
-        #        self.pvBuffer = pvAllocMemPageAligned (self.qwBufferSize.value)
-        #        print("Using buffer allocated by user program\n")
-        #
-        #    return 0
-        #except Exception as e:
-        #    print("Exception",str(e), " occured")
-        #    return -1
 
 
-
-  
 
 
     def calculate(self):
@@ -190,7 +175,6 @@ class M4i6622:
         
 
             self.pvBuffer = (c_int16 * self.qwBufferSize.value)(*self.buffer)
-            self.pnBuffer = cast  (self.pvBuffer, ptr16)
 
 
             #Define the buffer for transfer and start the DMA transfer
@@ -264,164 +248,4 @@ class M4i6622:
         except Exception as e:
             print("Exception",str(e), " has occured")
             return -1
-
-
-
-##################################
-#                                #
-#                                #
-############ Test Code ###########
-#                                #
-#                                #
-##################################
-
-
-def f0(x):
-
-    return sin(x)#sin_for_time(60000000, 40000000, 10000,10000, x)
-
-
-
-def f1(x):
-    return sin(x)
-
-def f2(x):
-    return x
-
-def f3(x):
-    return x
-
-
-def sin_for_time(freq1, freq2, time1,time2,x):
-    #Time in nanoseconds
-    x = x %((time1 + time2)*2.4)
-    Samples = 2400000000
-
-    # 1 sec = 2 400 000 000 
-    # 1 nanosecond  = 2.4
-    index0 = 0
-    for i in range(0,len(x)):
-        if x[i] > time1*2.4:
-            index0 = i
-            break
-    ret = np.zeros(x.size,dtype=int)
-
-
-    ret[0:index0] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq1/Samples,x[0:index0])),dtype=int)
-    ret[index0:] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/Samples,x[index0:])),dtype=int)
-    return ret
-
-
-    
-
-
-
-def Batman(x):
-    x = (x- 100000)/1000
-    if abs(x) < 0.5:
-        return math.floor(2.25*400*np.sin(x*300))
-    elif abs(x) < 0.75:
-        return math.floor(400*(3 * abs(x) + 0.75)*np.sin(x*300))
-    elif abs(x) < 1:
-        return math.floor(400*(9-8*abs(x))*math.sin(x*300))
-    #elif abs(x) > 4 and abs(x) < 7:
-    #    return math.floor(1000*(-3*math.sqrt(-(x/7)**2 + 1))*math.sin(x/10))
-    elif abs(x) > 3 and abs(x) < 7:
-        return math.floor(400*(3*math.pow(-(x/7)**2 + 1,0.5))*math.sin(x*300))
-    elif abs(x) > 1 and abs(x) < 3:
-        return math.floor(400* (1.5 - 0.5*abs(x) - 6 * math.sqrt(10)/14 *(math.sqrt(3-x**2 + 2 * abs(x)) -2))*math.sin(x*300))
-
-    else:
-        return 0
-    
-def sin(x):
-    f = 177000000
-    Samples = 2400000000
-    return np.floor(1000*np.sin(np.multiply(2*math.pi*f/Samples,x)))
-
-def sin_of_exp(x):
-    x = 10*x
-    return math.floor(1000 * math.sin(math.exp(x)))
-
-def sin_of_ln(x):
-    x = 10*x
-    if x != 0:
-        return math.floor(1000 * math.sin(math.log(x**2)))
-    else:
-        return 0
-
-def weird_sin(x):
-    a = 1000
-
-    if x != a:
-        return math.floor((x-a)*math.sin(1/(x-a)))
-    else: 
-        return 0
-
-def gaussianEnvelope(x):
-    x = x
-    x0 = 10000
-    sigma = 100000
-    f = 2000000 
-    return math.floor(1000*math.exp(-(x-x0)**2 / sigma)*  np.sin(x*2*math.pi*f/MEGA(200)))
-
-
-def gaussianDist(x):
-    x = x
-    x0 = 1000
-    sigma = 1000
-    return math.floor(1000*math.exp(-(x-x0)**2 / sigma))
-
-def firstOrderPolynomial(x):
-    x = (x-1000)/10000
-    return math.floor(x)
-
-
-def sechEnvelope(x):
-    T= 1000
-    f = 2000000
-    x0 = 100000
-
-    return math.floor(1000*(1/np.cosh((x-x0)/T)**2) * np.sin(x*2*math.pi*f/MEGA(200))) 
-
-def circle(x):
-    x = x- 10000
-
-    if abs(x) < 10000:
-        return math.floor(1/10 *math.sqrt(10000**2 - x**2)*math.sin(x/3))
-    else:
-        return 0
-
-
-
-
-
-
-
-
-M4i = M4i6622(channelNum=4)
-r = M4i.setSoftwareBuffer()
-
-
-t0 = time.perf_counter()
-
-M4i.setupCard(f0,f1,f2,f3)
-
-tf = time.perf_counter() - t0
-
-print("Done")
-print("Time elapsed: {0: 10f} s".format(tf))
-
-M4i.startCard()
-
-
-time.sleep(30)
-print("continue")
-r = M4i.stop()
-
-print(r)
-
-
-
-
 
