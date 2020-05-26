@@ -1,10 +1,12 @@
 import numpy as np
 import math
 
+SAMPLES  = 625000000
+
 def sin_for_time(freq1, freq2, time1,time2,x):
 
-    Samples = 600000000# 1 sec = 600 000 000 
-    samplePerNano = Samples*10e-9
+    
+    samplePerNano = SAMPLES*10e-9
 
     x = x %((time1 + time2)*samplePerNano)
 
@@ -20,8 +22,8 @@ def sin_for_time(freq1, freq2, time1,time2,x):
     ret = np.zeros(x.size,dtype=int)
 
 
-    ret[0:index0] = np.floor(2000*np.sin(np.multiply(2*math.pi*freq1/Samples,x[0:index0])))
-    ret[index0:] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/Samples,x[index0:])))
+    ret[0:index0] = np.floor(2000*np.sin(np.multiply(2*math.pi*freq1/SAMPLES,x[0:index0])))
+    ret[index0:] = np.floor(1000*np.sin(np.multiply(2*math.pi*freq2/SAMPLES,x[index0:])))
     return ret
 
 
@@ -49,8 +51,8 @@ def Batman(x):
     
 def sin(x):
     f = 177000000
-    Samples = 600000000
-    return np.floor(1000*np.sin(np.multiply(2*math.pi*f/Samples,x)))
+
+    return np.floor(6000*np.sin(np.multiply(2*math.pi*f/SAMPLES,x)))
 
 def sin_of_exp(x):
     x = 10*x

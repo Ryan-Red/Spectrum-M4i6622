@@ -22,7 +22,7 @@ def f3(x):
 
 t0 = time.perf_counter()
 
-M4i = M4i6622(channelNum=4)
+M4i = M4i6622(channelNum=4,SampleRate=625)
 r = M4i.setSoftwareBuffer()
 
 

@@ -21,7 +21,7 @@ from Functions.functions import *
 
 
 class M4i6622:
-    def __init__(self, address=b'/dev/spcm0',channelNum = 4):
+    def __init__(self, address=b'/dev/spcm0',channelNum = 4,SampleRate=625):
         
         #Connect the Card
         self.hCard = spcm_hOpen (create_string_buffer (address))
@@ -48,7 +48,7 @@ class M4i6622:
         if Valid == False:
             exit()
 
-        self.SampleRate = MEGA(600)
+        self.SampleRate = MEGA(SampleRate)
 
         if ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4IEXPSERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4XEXPSERIES):
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, self.SampleRate)
@@ -174,12 +174,17 @@ class M4i6622:
             qwSamplePos = 0
         
 
-            self.pvBuffer = (c_int16 * self.qwBufferSize.value)(*self.buffer)
+            self.pvBuffer = np.zeros(self.qwBufferSize.value,dtype="uint16")
+            
+            self.pvBuffer[0:self.llMemSamples.value] = self.buffer
+            self.trueBuffer = self.pvBuffer.tobytes()
+
+            #self.pvBuffer = (c_int16 * self.qwBufferSize.value)(*self.buffer)
 
 
             #Define the buffer for transfer and start the DMA transfer
             print("Starting the DMA transfer and waiting until data is in board memory\n")
-            spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.pvBuffer, uint64 (0), self.qwBufferSize)
+            spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.trueBuffer, uint64 (0), self.qwBufferSize)
             spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN, self.qwBufferSize)
             spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
             print("... data has been transferred to board memory\n")
