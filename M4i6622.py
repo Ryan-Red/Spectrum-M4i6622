@@ -179,7 +179,6 @@ class M4i6622:
             self.pvBuffer[0:self.llMemSamples.value] = self.buffer
             self.trueBuffer = self.pvBuffer.tobytes()
 
-            #self.pvBuffer = (c_int16 * self.qwBufferSize.value)(*self.buffer)
 
 
             #Define the buffer for transfer and start the DMA transfer
