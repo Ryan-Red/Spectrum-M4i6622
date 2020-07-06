@@ -8,7 +8,7 @@ def f0(x):
     return sin_for_time(60000000, 40000000, 10000,10000, x)
 
 def f1(x):
-    return sin(x)
+    return sin(x,f=100e3)
 
 def f2(x):
     return x

@@ -49,10 +49,9 @@ def Batman(x):
     else:
         return 0
     
-def sin(x):
-    f = 177000000
+def sin(x,f=177000000):
 
-    return np.floor(6000*np.sin(np.multiply(2*math.pi*f/SAMPLES,x)))
+    return np.floor(1000*np.sin(np.multiply(2*math.pi*f/SAMPLES,x)))
 
 def sin_of_exp(x):
     x = 10*x
