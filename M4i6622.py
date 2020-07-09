@@ -21,7 +21,7 @@ from Functions.functions import *
 
 
 class M4i6622:
-    def __init__(self, address=b'/dev/spcm0',channelNum = 4,SampleRate=625):
+    def __init__(self, address=b'/dev/spcm0',channelNum = 4,SampleRate=625,referenceClock=False, referenceClockFrequency = 10000000):
         
         #Connect the Card
         self.hCard = spcm_hOpen (create_string_buffer (address))
@@ -48,12 +48,26 @@ class M4i6622:
         if Valid == False:
             exit()
 
+        if referenceClock == True:
+            spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKMODE, SPC_CM_EXTREFCLOCK); # Set to reference clock mode
+            spcm_dwSetParam_i32 (self.hCard, SPC_REFERENCECLOCK, referenceClockFrequency); # Reference clock that is fed in at the Clock Frequency
+            if self.checkClock() == True:
+                print("Clock has been set\n")
+            else:
+                print("External Clock not found, reverting to default internal clock\n")
+                spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKMODE, SPC_CM_INTPLL) # Enables internal programmable quartz 1
+        else:
+            print("Using internal clock\n")
+
+
         self.SampleRate = MEGA(SampleRate)
 
         if ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4IEXPSERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4XEXPSERIES):
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, self.SampleRate)
         else:
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(1))
+
+
         spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   0)
 
         # setup the mode
@@ -125,6 +139,13 @@ class M4i6622:
             spcm_dwSetParam_i32 (self.hCard, SPC_FILTER1, int32(1) )
 
 
+    def checkClock(self):
+        if spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER) == ERR_CLOCKNOTLOCKED:
+            print("External clock not locked. Please check connection\n")
+            return False
+        else:
+            print("External clock locked.\n")
+            return True
 
     def checkCard(self):
         """
