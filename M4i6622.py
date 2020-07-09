@@ -21,7 +21,17 @@ from Functions.functions import *
 
 
 class M4i6622:
-    def __init__(self, address=b'/dev/spcm0',channelNum = 4,SampleRate=625,referenceClock=False, referenceClockFrequency = 10000000):
+    def __init__(self, address=b'/dev/spcm0',channelNum = 4,sampleRate=625,referenceClock=False, referenceClockFrequency = 10000000, clockOut = False):
+        '''
+        address: location of the card on the computer, default is /dev/spcm0
+        channelNum: Number of channels used on the card, default is 4
+        sampleRate: Sample Rate in Mega Samples per second (MS/s) default is 625, the maximum for an M4i.66xx card
+        referenceClock: Presence of a reference clock, by default is False
+        referenceClockFrequency: Frequency of the reference clock (in Hz), by default is 10 MHz.
+        clockOut: If you want a clock output from the M4i. By default is False.
+
+        Reference clock frequencies can only go from 10 MHz to 1.25GHz, but cannot be between 750 to 757 MHz and 1125 to 1145 MHz 
+        '''
         
         #Connect the Card
         self.hCard = spcm_hOpen (create_string_buffer (address))
@@ -44,14 +54,16 @@ class M4i6622:
         spcm_dwGetParam_i32 (self.hCard, SPC_FNCTYPE, byref (self.lFncType))
 
 
+        #Check if the card itself is valid
         Valid = self.checkCard()
         if Valid == False:
             exit()
 
+        #Configure the reference clock (if required)
         if referenceClock == True:
             spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKMODE, SPC_CM_EXTREFCLOCK); # Set to reference clock mode
             spcm_dwSetParam_i32 (self.hCard, SPC_REFERENCECLOCK, referenceClockFrequency); # Reference clock that is fed in at the Clock Frequency
-            if self.checkClock() == True:
+            if self.checkExternalClock() == True:
                 print("Clock has been set\n")
             else:
                 print("External Clock not found, reverting to default internal clock\n")
@@ -60,15 +72,20 @@ class M4i6622:
             print("Using internal clock\n")
 
 
-        self.SampleRate = MEGA(SampleRate)
 
+        #Set the Sample Rate
+        self.SampleRate = MEGA(sampleRate)
         if ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4IEXPSERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4XEXPSERIES):
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, self.SampleRate)
         else:
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(1))
 
 
-        spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   0)
+        #Set the clock output
+        if clockOut == True:
+            spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   1)
+        else: 
+            spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   0)
 
         # setup the mode
         self.qwChEnable = uint64 (1)
@@ -87,18 +104,22 @@ class M4i6622:
         #Setting up the infinite loop
         spcm_dwSetParam_i64 (self.hCard, SPC_LOOPS,       self.llLoops)
 
+
+        #Setting up the channels.
+
+
         self.channelNum = channelNum
+        channelEnable = [SPC_ENABLEOUT0,SPC_ENABLEOUT1,SPC_ENABLEOUT2,SPC_ENABLEOUT3]
 
-        if self.channelNum == 1:
-            #Enable the outputs for all 4 channels
-            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
+        lChannelList = [int32 (0), int32 (0), int32 (0), int32 (0)]
+        amplitudeList = [SPC_AMP0,SPC_AMP1,SPC_AMP2,SPC_AMP3]
+        filterList = [SPC_FILTER0, SPC_FILTER1, SPC_FILTER2, SPC_FILTER3]
 
-        if self.channelNum == 4:
-            #Enable the outputs for all 4 channels
-            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
-            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT1,  1)
-            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT2,  1)
-            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT3,  1)
+        for i in range(0,self.channelNum,1):
+            spcm_dwSetParam_i64 (self.hCard, channelEnable[i],  1) #Enabling the channel
+            spcm_dwSetParam_i32 (self.hCard, amplitudeList[i] + lChannelList[i].value * (SPC_AMP1 - SPC_AMP0), int32 (2500)) # Setting the max amplitude
+            spcm_dwSetParam_i32 (self.hCard, filterList[i], int32(1)) #Turning on the channel's filter
+
 
         #Getting total number of channels recognized by the software (4 in our case) and getting the amount of bytes per sample
         self.lSetChannels = int32 (0)
@@ -119,27 +140,13 @@ class M4i6622:
 
         spcm_dwSetParam_i64 (self.hCard, SPC_TRIG_DELAY,       0)
 
-        lChannel0 = int32 (0)
-        lChannel1 = int32 (0)
-        lChannel2 = int32 (0)
-        lChannel3 = int32 (0)
+        
 
+    def checkExternalClock(self):
+        '''
+        Checks to see if the external clock is working.
+        '''
 
-        #Setting up the max amplitude of each output
-        if self.channelNum == 1:
-            spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
-
-        else:
-            spcm_dwSetParam_i32 (self.hCard, SPC_AMP1 + lChannel1.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-            spcm_dwSetParam_i32 (self.hCard, SPC_AMP2 + lChannel2.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-            spcm_dwSetParam_i32 (self.hCard, SPC_AMP3 + lChannel3.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-
-            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
-            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER1, int32(1) )
-
-
-    def checkClock(self):
         if spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER) == ERR_CLOCKNOTLOCKED:
             print("External clock not locked. Please check connection\n")
             return False
@@ -147,9 +154,10 @@ class M4i6622:
             print("External clock locked.\n")
             return True
 
+
     def checkCard(self):
         """
-        Function that checks if the card used is indeed an M4i.6622-x8 or is compatible with AO.
+        Function that checks if the card used is indeed an M4i.6622-x8 or is compatible with Analog Output.
         """
 
         #Check if Card is connected
@@ -181,15 +189,37 @@ class M4i6622:
 
 
 
+    def setupCard(self,functionList):
 
-    def calculate(self):
-        """
-        Calculate is a function that calculates the data, stores it in the buffer and then uploads the buffer. Functions function0 to function3 are the functions 
-        used in data generation, for channels 0 to 3 respectively. To use this function pass in all 4 functions (even if they are 0 functions). 
-        Timeout is the time you want for the timeout, in milliseconds.
-        
-        In the future, will add the ability to pass in a list of functions corresponding to the amount of channels you want to use.
-        """
+        self.genBuffer(functionList)
+        self.transferData()
+        return 0
+
+    def getMaxDataLength(self):
+
+        return self.llMemSamples.value
+    
+    def genBuffer(self,functionList):
+
+        Y_vect = []
+        val = self.getMaxDataLength()
+        functionNum = len(functionList)
+
+        X = np.arange(0,(int)(val/4),1)
+
+        for i in range(0,4,1):
+            if i > functionNum -1:
+                Y_vect = Y_vect + [np.zeros(len(X)).astype(int)]
+            else:
+                Y_vect = Y_vect + [functionList[i](X).astype(int)]
+
+
+        self.buffer = np.column_stack(Y_vect).flatten()
+        return 0
+
+
+    def transferData(self):
+
         try:
             #Calculating the amount of samples that can be added to the buffer
             qwSamplePos = 0
@@ -200,16 +230,12 @@ class M4i6622:
             self.pvBuffer[0:self.llMemSamples.value] = self.buffer
             self.trueBuffer = self.pvBuffer.tobytes()
 
-
-
             #Define the buffer for transfer and start the DMA transfer
             print("Starting the DMA transfer and waiting until data is in board memory\n")
             spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.trueBuffer, uint64 (0), self.qwBufferSize)
             spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN, self.qwBufferSize)
             spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
             print("... data has been transferred to board memory\n")
-
-            
 
             
             return 0
@@ -221,8 +247,6 @@ class M4i6622:
 
         # We'll start and wait until the card has finished or until a timeout occurs
         try:
- 
-
 
             spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, 0)
             sys.stdout.write("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
@@ -233,28 +257,6 @@ class M4i6622:
         except KeyboardInterrupt:
             #it is also possible to stop the process before a timeout using a keyboard interrupt (Contrl+C in Windows)
             return -1
-
-    def setupCard(self,function0, function1, function2, function3):
-        self.genBuffer(function0, function1, function2, function3)
-        self.calculate()
-        return 0
-
-    def getVal(self):
-
-        return self.llMemSamples.value
-    
-    def genBuffer(self,function0, function1, function2, function3):
-        val = self.getVal()
-
-        #Creating and populating the buffer.
-        rangeA = np.arange(0,(int)(val/4),1)
-        vect0 = function0(rangeA).astype(int)     
-        vect1 = function1(rangeA).astype(int)
-        vect2 = function2(rangeA).astype(int)            
-        vect3 = function3(rangeA).astype(int)
-        self.buffer = np.column_stack((vect0, vect1, vect2, vect3)).flatten()
-        return 0
-
 
 
     def stop(self):

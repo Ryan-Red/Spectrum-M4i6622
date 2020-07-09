@@ -26,7 +26,7 @@ M4i = M4i6622(channelNum=4,SampleRate=625)
 r = M4i.setSoftwareBuffer()
 
 
-M4i.setupCard(f0,f1,f2,f3)
+M4i.setupCard([f0,f1,f2,f3])
 
 
 tf = time.perf_counter() - t0
