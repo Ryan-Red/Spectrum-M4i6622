@@ -75,7 +75,7 @@ def gaussianEnvelope(x):
     x0 = 10000
     sigma = 100000
     f = 2000000 
-    return math.floor(1000*math.exp(-(x-x0)**2 / sigma)*  np.sin(x*2*math.pi*f/MEGA(200)))
+    return math.floor(1000*np.exp(-np.power((x-x0),2) / sigma)*  np.sin(np.multiply(x,2*math.pi*f/SAMPLES)))
 
 
 def gaussianDist(x):
