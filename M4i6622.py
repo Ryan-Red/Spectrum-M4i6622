@@ -201,20 +201,33 @@ class M4i6622:
     
     def genBuffer(self,functionList):
 
-        Y_vect = []
+        
         val = self.getMaxDataLength()
-        functionNum = len(functionList)
-
-        X = np.arange(0,(int)(val/4),1)
-
-        for i in range(0,4,1):
-            if i > functionNum -1:
-                Y_vect = Y_vect + [np.zeros(len(X)).astype(int)]
-            else:
-                Y_vect = Y_vect + [functionList[i](X).astype(int)]
 
 
-        self.buffer = np.column_stack(Y_vect).flatten()
+        f0,f1,f2,f3 = functionList
+        
+
+        #Creating and populating the buffer.
+        rangeA = np.arange(0,(int)(val/4),1)
+        vect0 = f0(rangeA).astype(int)     
+        vect1 = f1(rangeA).astype(int)
+        vect2 = f2(rangeA).astype(int)            
+        vect3 = f3(rangeA).astype(int)
+        self.buffer = np.column_stack((vect0, vect1, vect2, vect3)).flatten()
+
+        #Y_vect = []
+        #functionNum = len(functionList)
+
+        # X = np.arange(0,(int)(val/4),1)
+
+        # for i in range(0,4,1):
+        #     if i > functionNum -1:
+        #         Y_vect = Y_vect + [np.zeros(len(X)).astype(int)]
+        #     else:
+        #         Y_vect = Y_vect + [functionList[i](X).astype(int)]
+
+        # self.buffer = np.column_stack(Y_vect).flatten()
         return 0
 
 
@@ -241,7 +254,9 @@ class M4i6622:
             return 0
         except KeyboardInterrupt:
             #it is also possible to stop the process before a timeout using a keyboard interrupt (Contrl+C in Windows)
+            print("Broken Operation")
             return -1
+            exit()
 
     def startCard(self):
 
