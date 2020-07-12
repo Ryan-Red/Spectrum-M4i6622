@@ -245,8 +245,8 @@ class M4i6622:
             #Calculating the amount of samples that can be added to the buffer
             qwSamplePos = 0
         
-            self.pvBuffer = self.buffer + np.zeros(self.qwBufferSize.value - len(self.buffer),dtype="uint16")
-            #self.pvBuffer = np.zeros(self.qwBufferSize.value,dtype="uint16")
+            self.pvBuffer = np.concatenate([self.buffer, np.zeros(self.qwBufferSize.value - len(self.buffer),dtype="uint16")])
+                        #self.pvBuffer = np.zeros(self.qwBufferSize.value,dtype="uint16")
             
             #self.pvBuffer[0:self.llMemSamples.value] 
             self.trueBuffer = self.pvBuffer.tobytes()
