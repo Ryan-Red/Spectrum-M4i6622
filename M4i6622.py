@@ -115,7 +115,7 @@ class M4i6622:
         amplitudeList = [SPC_AMP0,SPC_AMP1,SPC_AMP2,SPC_AMP3]
         filterList = [SPC_FILTER0, SPC_FILTER1, SPC_FILTER2, SPC_FILTER3]
 
-        for i in range(0,self.channelNum,1):
+        for i in range(0, self.channelNum,1):
             spcm_dwSetParam_i64 (self.hCard, channelEnable[i],  1) #Enabling the channel
             spcm_dwSetParam_i32 (self.hCard, amplitudeList[i] + lChannelList[i].value * (SPC_AMP1 - SPC_AMP0), int32 (2500)) # Setting the max amplitude
             #spcm_dwSetParam_i32 (self.hCard, filterList[i], int32(1)) #Turning on the channel's filter
@@ -166,13 +166,20 @@ class M4i6622:
             return False
 
         #Getting the card Name to check if it's supported.
-        sCardName = szTypeToName (self.lCardType.value)
-        if self.lFncType.value == SPCM_TYPE_AO:
-            print("Found: {0} sn {1:05d}\n".format(sCardName,self.lSerialNumber.value))
-            return True
-        else:
-            print("Code is for an M4i.6622 Card.\nCard: {0} sn {1:05d} is not supported.\n".format(sCardName,lSerialNumber.value))
-            return False
+        try:
+
+            sCardName = szTypeToName (self.lCardType.value)
+            if self.lFncType.value == SPCM_TYPE_AO:
+                print("Found: {0} sn {1:05d}\n".format(sCardName,self.lSerialNumber.value))
+                return True
+            else:
+                print("Code is for an M4i.6622 Card.\nCard: {0} sn {1:05d} is not supported.\n".format(sCardName,lSerialNumber.value))
+                return False
+
+        except:
+            dwError = spcm_dwSetParam_i32 (hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
+            print(dwError)
+            print("Problem occured, mb")
 
 
     def setSoftwareBuffer(self):
@@ -247,6 +254,11 @@ class M4i6622:
             #Define the buffer for transfer and start the DMA transfer
             print("Starting the DMA transfer and waiting until data is in board memory\n")
             spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.trueBuffer, uint64 (0), self.qwBufferSize)
+
+            dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
+            if dwError == ERR_TIMEOUT:
+                spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_STOP)
+
             spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN, self.qwBufferSize)
             spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
             print("... data has been transferred to board memory\n")
