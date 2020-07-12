@@ -256,7 +256,7 @@ class M4i6622:
         
 
         #Creating and populating the buffer.
-        rangeA = np.arange(0,(int)(val/4),1)
+        rangeA = np.arange(0,(int)(val/4)-1,1)
         vect0 = f0(rangeA).astype(int)     
         vect1 = f1(rangeA).astype(int)
         vect2 = f2(rangeA).astype(int)            
@@ -294,13 +294,14 @@ class M4i6622:
             #Define the buffer for transfer and start the DMA transfer
             print("Starting the DMA transfer and waiting until data is in board memory\n")
             spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.trueBuffer, uint64 (0), self.qwBufferSize)
-
-            dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
-            if dwError != ERR_OK:
-                print(dwError)
-                spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_STOP)
+            print("Finished initial transfer")
+            # dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
+            # if dwError != ERR_OK:
+            #     print(dwError)
+            #     spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_STOP)
 
             spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN, self.qwBufferSize)
+            print("Got full data size")
             spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
             print("... data has been transferred to board memory\n")
 
