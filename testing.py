@@ -5,7 +5,7 @@ from Functions.functions import *
 
 #4 functions to be used
 def f0(x):
-    return gaussianEnvelope
+    return gaussianEnvelope(x)
 
 def f1(x):
     return sin(x,f=1000)
