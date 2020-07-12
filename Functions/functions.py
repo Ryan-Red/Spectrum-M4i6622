@@ -67,7 +67,7 @@ def sin_of_ln(x):
 def weird_sin(x):
     a = 1000
 
-    return np.where(x != a, math.floor((x-a)*math.sin(1/(x-a))), 0)
+    return math.floor(1000*np.where(x != a, math.floor((x-a)*math.sin(1/(x-a))), 0))
   
 
 def gaussianEnvelope(x):

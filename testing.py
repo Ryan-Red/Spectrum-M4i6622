@@ -8,7 +8,7 @@ def f0(x):
     return gaussianEnvelope
 
 def f1(x):
-    return weird_sin(x)
+    return sin(x,f=1000)
 
 def f2(x):
     return sin(x,f=1000)
