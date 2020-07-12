@@ -215,6 +215,7 @@ class M4i6622:
         vect2 = f2(rangeA).astype(int)            
         vect3 = f3(rangeA).astype(int)
         self.buffer = np.column_stack((vect0, vect1, vect2, vect3)).flatten()
+        print("Buffer has been generated.")
 
         #Y_vect = []
         #functionNum = len(functionList)
