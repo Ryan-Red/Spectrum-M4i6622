@@ -5,7 +5,7 @@ from Functions.functions import *
 
 #4 functions to be used
 def f0(x):
-    return sin_for_time(60000000, 40000000, 10000,10000, x)
+    return sin(x,f=300000)
 
 def f1(x):
     return sin(x,f=100e3)

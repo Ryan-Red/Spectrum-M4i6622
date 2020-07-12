@@ -109,16 +109,34 @@ class M4i6622:
 
 
         self.channelNum = channelNum
-        channelEnable = [SPC_ENABLEOUT0,SPC_ENABLEOUT1,SPC_ENABLEOUT2,SPC_ENABLEOUT3]
+        # channelEnable = [SPC_ENABLEOUT0,SPC_ENABLEOUT1,SPC_ENABLEOUT2,SPC_ENABLEOUT3]
 
-        lChannelList = [int32 (0), int32 (0), int32 (0), int32 (0)]
-        amplitudeList = [SPC_AMP0,SPC_AMP1,SPC_AMP2,SPC_AMP3]
-        filterList = [SPC_FILTER0, SPC_FILTER1, SPC_FILTER2, SPC_FILTER3]
+        # lChannelList = [int32 (0), int32 (0), int32 (0), int32 (0)]
+        # amplitudeList = [SPC_AMP0,SPC_AMP1,SPC_AMP2,SPC_AMP3]
+        # filterList = [SPC_FILTER0, SPC_FILTER1, SPC_FILTER2, SPC_FILTER3]
 
-        for i in range(0, self.channelNum,1):
-            spcm_dwSetParam_i64 (self.hCard, channelEnable[i],  1) #Enabling the channel
-            spcm_dwSetParam_i32 (self.hCard, amplitudeList[i] + lChannelList[i].value * (SPC_AMP1 - SPC_AMP0), int32 (2500)) # Setting the max amplitude
-            #spcm_dwSetParam_i32 (self.hCard, filterList[i], int32(1)) #Turning on the channel's filter
+
+
+
+        if self.channelNum == 1:
+            #Enable the outputs for all 4 channels
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
+
+        if self.channelNum == 4:
+            #Enable the outputs for all 4 channels
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT1,  1)
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT2,  1)
+            spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT3,  1)
+
+
+
+
+
+        # for i in range(0, self.channelNum,1):
+        #     spcm_dwSetParam_i64 (self.hCard, channelEnable[i],  1) #Enabling the channel
+        #     spcm_dwSetParam_i32 (self.hCard, amplitudeList[i] + lChannelList[i].value * (SPC_AMP1 - SPC_AMP0), int32 (2500)) # Setting the max amplitude
+        #     #spcm_dwSetParam_i32 (self.hCard, filterList[i], int32(1)) #Turning on the channel's filter
 
 
         #Getting total number of channels recognized by the software (4 in our case) and getting the amount of bytes per sample
@@ -139,6 +157,28 @@ class M4i6622:
         spcm_dwSetParam_i32 (self.hCard, SPC_TRIGGEROUT,       0)
 
         spcm_dwSetParam_i64 (self.hCard, SPC_TRIG_DELAY,       0)
+
+
+
+        lChannel0 = int32 (0)
+        lChannel1 = int32 (0)
+        lChannel2 = int32 (0)
+        lChannel3 = int32 (0)
+
+
+        #Setting up the max amplitude of each output
+        if self.channelNum == 1:
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
+
+        else:
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP1 + lChannel1.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP2 + lChannel2.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+            spcm_dwSetParam_i32 (self.hCard, SPC_AMP3 + lChannel3.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
+
+            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
+            spcm_dwSetParam_i32 (self.hCard, SPC_FILTER1, int32(1) )
 
         
 
