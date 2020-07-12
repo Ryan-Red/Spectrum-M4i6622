@@ -323,11 +323,15 @@ class M4i6622:
 
             spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, 0)
             sys.stdout.write("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
-            dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
-            if dwError == ERR_TIMEOUT:
-                print("timeout has elapsed")
+            while True:
+                time.sleep(1)
+
+            #dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
+            #if dwError == ERR_TIMEOUT:
+            #    print("timeout has elapsed")
 
         except KeyboardInterrupt:
+            print("Process finished.")
             #it is also possible to stop the process before a timeout using a keyboard interrupt (Contrl+C in Windows)
             return -1
 
