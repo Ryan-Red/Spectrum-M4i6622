@@ -5,13 +5,13 @@ from Functions.functions import *
 
 #4 functions to be used
 def f0(x):
-    return sin(x,f=300000)
+    return gaussianEnvelope
 
 def f1(x):
-    return sin(x,f=100e3)
+    return weird_sin(x)
 
 def f2(x):
-    return x
+    return sin(x,f=1000)
 
 def f3(x):
     return x
