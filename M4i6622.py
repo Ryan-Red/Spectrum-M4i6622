@@ -252,30 +252,30 @@ class M4i6622:
         val = self.getMaxDataLength()
 
 
-        f0,f1,f2,f3 = functionList
+       #f0,f1,f2,f3 = functionList
         
 
-        #Creating and populating the buffer.
-        rangeA = np.arange(0,(int)(val/4)-1,1)
-        vect0 = f0(rangeA).astype(int)     
-        vect1 = f1(rangeA).astype(int)
-        vect2 = f2(rangeA).astype(int)            
-        vect3 = f3(rangeA).astype(int)
-        self.buffer = np.column_stack((vect0, vect1, vect2, vect3)).flatten()
-        print("Buffer has been generated.")
+        # #Creating and populating the buffer.
+        # rangeA = np.arange(0,(int)(val/4),1)
+        # vect0 = f0(rangeA).astype(int)     
+        # vect1 = f1(rangeA).astype(int)
+        # vect2 = f2(rangeA).astype(int)            
+        # vect3 = f3(rangeA).astype(int)
+        # self.buffer = np.column_stack((vect0, vect1, vect2, vect3)).flatten()
+        # print("Buffer has been generated.")
 
-        #Y_vect = []
-        #functionNum = len(functionList)
+        Y_vect = []
+        functionNum = len(functionList)
 
-        # X = np.arange(0,(int)(val/4),1)
+        X = np.arange(0,(int)(val/4),1)
 
-        # for i in range(0,4,1):
-        #     if i > functionNum -1:
-        #         Y_vect = Y_vect + [np.zeros(len(X)).astype(int)]
-        #     else:
-        #         Y_vect = Y_vect + [functionList[i](X).astype(int)]
+        for i in range(0,4,1):
+            if i > functionNum -1:
+                Y_vect = Y_vect + [np.zeros(len(X)).astype(int)]
+            else:
+                Y_vect = Y_vect + [functionList[i](X).astype(int)]
 
-        # self.buffer = np.column_stack(Y_vect).flatten()
+        self.buffer = np.column_stack(Y_vect).flatten()
         return 0
 
 
@@ -285,27 +285,20 @@ class M4i6622:
             #Calculating the amount of samples that can be added to the buffer
             qwSamplePos = 0
         
-            self.pvBuffer = np.concatenate([self.buffer, np.zeros(self.qwBufferSize.value - len(self.buffer),dtype="uint16")])
-                        #self.pvBuffer = np.zeros(self.qwBufferSize.value,dtype="uint16")
+            self.pvBuffer = np.zeros(self.qwBufferSize.value,dtype="uint16")
             
-            #self.pvBuffer[0:self.llMemSamples.value] 
+            self.pvBuffer[0:self.llMemSamples.value] = self.buffer
             self.trueBuffer = self.pvBuffer.tobytes()
 
-            #spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STOPDMA);
-            #spcm_dwInvalidateBuf (self.hCard, SPCM_BUF_DATA);
+
 
             #Define the buffer for transfer and start the DMA transfer
             print("Starting the DMA transfer and waiting until data is in board memory\n")
             spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.trueBuffer, uint64 (0), self.qwBufferSize)
             print("Finished initial transfer")
-            # dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
-            # if dwError != ERR_OK:
-            #     print(dwError)
-            #     spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_STOP)
-
             spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN, self.qwBufferSize)
             print("Got full data size")
-            spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STARTDMA )#| M2CMD_DATA_WAITDMA)
+            spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
             print("... data has been transferred to board memory\n")
 
             
@@ -323,10 +316,11 @@ class M4i6622:
 
             spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, 0)
             sys.stdout.write("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
+            dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
             while True:
                 time.sleep(1)
 
-            #dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
+          
             #if dwError == ERR_TIMEOUT:
             #    print("timeout has elapsed")
 
