@@ -251,19 +251,6 @@ class M4i6622:
         
         val = self.getMaxDataLength()
 
-
-       #f0,f1,f2,f3 = functionList
-        
-
-        # #Creating and populating the buffer.
-        # rangeA = np.arange(0,(int)(val/4),1)
-        # vect0 = f0(rangeA).astype(int)     
-        # vect1 = f1(rangeA).astype(int)
-        # vect2 = f2(rangeA).astype(int)            
-        # vect3 = f3(rangeA).astype(int)
-        # self.buffer = np.column_stack((vect0, vect1, vect2, vect3)).flatten()
-        # print("Buffer has been generated.")
-
         Y_vect = []
         functionNum = len(functionList)
 
