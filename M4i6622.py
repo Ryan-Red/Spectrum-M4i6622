@@ -11,7 +11,6 @@
 from pyspcm import *
 from spcm_tools import *
 import math
-import sys
 import numpy as np
 import time
 from Functions.functions import *
@@ -301,8 +300,8 @@ class M4i6622:
         try:
 
             spcm_dwSetParam_i32 (self.hCard, SPC_TIMEOUT, 0)
-            sys.stdout.write("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
-            dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER | M2CMD_CARD_WAITREADY)
+            print("\nStarting the card and waiting for ready interrupt\n(continuous and single restart will have timeout)\n")
+            dwError = spcm_dwSetParam_i32 (self.hCard, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER )#| M2CMD_CARD_WAITREADY)
             while True:
                 time.sleep(1)
 
