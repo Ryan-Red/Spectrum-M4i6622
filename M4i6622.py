@@ -14,7 +14,6 @@ import math
 import sys
 import numpy as np
 import time
-import multiprocessing
 from Functions.functions import *
 
 
@@ -281,7 +280,7 @@ class M4i6622:
 
             #Define the buffer for transfer and start the DMA transfer
             print("Starting the DMA transfer and waiting until data is in board memory\n")
-            spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), self.trueBuffer, uint64 (0), self.qwBufferSize)
+            spcm_dwDefTransfer_i64 (self.hCard, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, uint32(self.qwBufferSize.value), self.trueBuffer, uint64 (0), self.qwBufferSize)
             print("Finished initial transfer")
             spcm_dwSetParam_i32 (self.hCard, SPC_DATA_AVAIL_CARD_LEN, self.qwBufferSize)
             print("Got full data size")
