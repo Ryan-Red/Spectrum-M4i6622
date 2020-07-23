@@ -131,10 +131,6 @@ class M4i6622:
 
 
 
-        for i in range(0, self.channelNum,1):
-            spcm_dwSetParam_i64 (self.hCard, channelEnable[i],  1) #Enabling the channel
-            spcm_dwSetParam_i32 (self.hCard, amplitudeList[i] + lChannelList[i].value * (SPC_AMP1 - SPC_AMP0), int32 (2500)) # Setting the max amplitude
-            spcm_dwSetParam_i32 (self.hCard, filterList[i], int32(1)) #Turning on the channel's filter
 
 
         #Getting total number of channels recognized by the software (4 in our case) and getting the amount of bytes per sample
@@ -158,6 +154,13 @@ class M4i6622:
 
 
 
+        for i in range(0, self.channelNum,1):
+            spcm_dwSetParam_i64 (self.hCard, channelEnable[i],  1) #Enabling the channel
+            spcm_dwSetParam_i32 (self.hCard, amplitudeList[i] + lChannelList[i].value * (SPC_AMP1 - SPC_AMP0), int32 (2500)) # Setting the max amplitude
+            spcm_dwSetParam_i32 (self.hCard, filterList[i], int32(1)) #Turning on the channel's filter
+
+
+            
         # lChannel0 = int32 (0)
         # lChannel1 = int32 (0)
         # lChannel2 = int32 (0)
