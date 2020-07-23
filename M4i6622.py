@@ -160,26 +160,6 @@ class M4i6622:
             spcm_dwSetParam_i32 (self.hCard, filterList[i], int32(1)) #Turning on the channel's filter
 
 
-            
-        # lChannel0 = int32 (0)
-        # lChannel1 = int32 (0)
-        # lChannel2 = int32 (0)
-        # lChannel3 = int32 (0)
-
-
-        # #Setting up the max amplitude of each output
-        # if self.channelNum == 1:
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
-
-        # else:
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_AMP0 + lChannel0.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_AMP1 + lChannel1.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_AMP2 + lChannel2.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_AMP3 + lChannel3.value * (SPC_AMP1 - SPC_AMP0), int32 (2500))
-
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_FILTER0, int32(1) )
-        #     spcm_dwSetParam_i32 (self.hCard, SPC_FILTER1, int32(1) )
 
         
 
