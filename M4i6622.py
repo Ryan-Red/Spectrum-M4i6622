@@ -75,15 +75,19 @@ class M4i6622:
         self.SampleRate = MEGA(sampleRate)
         if ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4IEXPSERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M4XEXPSERIES):
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, self.SampleRate)
+            print("Sample Rate has been set.\n")
         else:
             spcm_dwSetParam_i64 (self.hCard, SPC_SAMPLERATE, MEGA(1))
+            print("ERROR: Sample Rate failed to be set. Make sure that the sample rate is under 625 Mega Samples/s and is an integer number\n")
 
 
         #Set the clock output
         if clockOut == True:
             spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   1)
+            print("Clock Output On.\n")
         else: 
             spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKOUT,   0)
+            print("Clock Output Off.\n")
 
         # setup the mode
         self.qwChEnable = uint64 (1)
@@ -107,26 +111,18 @@ class M4i6622:
 
 
         self.channelNum = channelNum
+        if channelNum == 3:
+            self.channelNum = 4 #Cannot have 3 channels, its either 1,2 or 4
+        else:
+            self.channelNum = channelNum
+
+
+
         channelEnable = [SPC_ENABLEOUT0,SPC_ENABLEOUT1,SPC_ENABLEOUT2,SPC_ENABLEOUT3]
 
         lChannelList = [int32 (0), int32 (0), int32 (0), int32 (0)]
         amplitudeList = [SPC_AMP0,SPC_AMP1,SPC_AMP2,SPC_AMP3]
         filterList = [SPC_FILTER0, SPC_FILTER1, SPC_FILTER2, SPC_FILTER3]
-
-
-
-
-        # if self.channelNum == 1:
-        #     #Enable the outputs for all 4 channels
-        #     spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
-
-        # if self.channelNum == 4:
-        #     #Enable the outputs for all 4 channels
-        #     spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT0,  1)
-        #     spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT1,  1)
-        #     spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT2,  1)
-        #     spcm_dwSetParam_i64 (self.hCard, SPC_ENABLEOUT3,  1)
-
 
 
 
@@ -235,9 +231,10 @@ class M4i6622:
         Y_vect = []
         functionNum = len(functionList)
 
-        X = np.arange(0,(int)(val/4),1)
 
-        for i in range(0,4,1):
+        X = np.arange(0,(int)(val/self.channelNum),1)
+
+        for i in range(0,self.channelNum,1):
             if i > functionNum -1:
                 Y_vect = Y_vect + [np.zeros(len(X)).astype(int)]
             else:
