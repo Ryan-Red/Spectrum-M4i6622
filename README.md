@@ -1,3 +1,7 @@
-##Spectrum-M4i6622x8 
+# Spectrum M4i.6622-x8
+This software is for controlling the M4i.6622-x8 Arbitrary Waveform Generator (AWG) from Spectrum in Python. The code allows you to
+pass in any function of your choosing and have the AWG produce the corresponding waveform/
 
-This is code to control Spectrum's M4i.6622-x8 AWG
+
+## See the vuthalabs repo for the most up to date version and documentation for how to install and use the M4i.6622 card:
+https://github.com/vuthalabs/Spectrum-M4i6622
