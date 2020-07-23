@@ -4,4 +4,4 @@ pass in any function of your choosing and have the AWG produce the corresponding
 
 
 ## See the vuthalabs repo for the most up to date version and documentation for how to install and use the M4i.6622 card:
-https://github.com/vuthalabs/Spectrum-M4i6622
+https://github.com/vuthalab/spectrum-awg
