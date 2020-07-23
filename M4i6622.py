@@ -64,7 +64,7 @@ class M4i6622:
             if self.checkExternalClock() == True:
                 print("Clock has been set\n")
             else:
-                print("External Clock not found, reverting to default internal clock\n")
+                print("External Clock not found, please check connection to external clock or set referenceClock to False.\n")
                 spcm_dwSetParam_i32 (self.hCard, SPC_CLOCKMODE, SPC_CM_INTPLL) # Enables internal programmable quartz 1
         else:
             print("Using internal clock\n")
